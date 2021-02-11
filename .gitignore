@@ -1,3 +1,5 @@
+.vscode
+
 # Prerequisites
 *.d
 
@@ -53,5 +55,4 @@ dkms.conf
 
 html.h
 index.html
-.vscode
 !bundle.modern.js
