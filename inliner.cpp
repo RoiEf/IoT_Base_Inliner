@@ -18,7 +18,7 @@ int main(int argc, char **argv) {
     string finalString;
     char fArgStr[256];
     char inputFileName[128] = {0};
-    char cssFileName[128] = {0};
+    char genFileName[128] = {0};
     char outputFileName[128] = {0};
     fstream pInputFile;
     fstream pCSSInput;
@@ -71,40 +71,62 @@ int main(int argc, char **argv) {
     }
 
     pInputFile.open(inputFileName, ios::in);
-    if (pInputFile.is_open()) {
+    if (!pInputFile.is_open()) {
+        cout << "Error opening input file: " << inputFileName << endl;
+        return 1;
+    } else {
         string readString;
         size_t foundCSS;
 
         while (getline(pInputFile, readString)) {
             foundCSS = readString.find("<link rel=\"stylesheet\" href=\"");
-            if (foundCSS == string::npos) {
-                finalString += readString;
-                finalString += "\n";
-            } else {
-                if (extractCSSFileName(readString, cssFileName) != 0) {
+            if (foundCSS != string::npos) {
+                if (extractFileName(readString, genFileName) != 0) {
                     cout << "Error getting CSS input file!" << endl;
                     pInputFile.close();
                     return 1;
                 }
-                pCSSInput.open(cssFileName, ios::in);
-                if (pCSSInput.is_open()) {
+                pCSSInput.open(genFileName, ios::in);
+                if (!pCSSInput.is_open()) {
+                    cout << "Error opening CSS input file: " << genFileName << endl;
+                    pInputFile.close();
+                    return 1;
+                } else {
                     finalString += "<style>";
                     while (getline(pCSSInput, readString)) {
                         finalString += readString;
                     }
                     finalString += "</style>\n";
                     pCSSInput.close();
+                }
+            } else {
+                foundCSS = readString.find("<script type=\"module\" src=\"");
+                if (foundCSS != string::npos) {
+                    if (extractFileName(readString, genFileName) != 0) {
+                        cout << "Error getting Script input file!" << endl;
+                        pInputFile.close();
+                        return 1;
+                    }
+                    pCSSInput.open(genFileName, ios::in);
+                    if (!pCSSInput.is_open()) {
+                        cout << "Error opening Script input file: " << genFileName << endl;
+                        pInputFile.close();
+                        return 1;
+                    } else {
+                        finalString += "<script type=\"module\">";
+                        while (getline(pCSSInput, readString)) {
+                            finalString += readString;
+                        }
+                        finalString += "</script>\n";
+                        pCSSInput.close();
+                    }
                 } else {
-                    cout << "Error opening CSS input file: " << cssFileName << endl;
-                    pInputFile.close();
-                    return 1;
+                    finalString += readString;
+                    finalString += "\n";
                 }
             }
         }
         pInputFile.close();
-    } else {
-        cout << "Error opening input file: " << inputFileName << endl;
-        return 1;
     }
 
     if (ahgFlag) {
@@ -131,17 +153,34 @@ int main(int argc, char **argv) {
     return 0;
 }
 
-int extractCSSFileName(string inStr, char *retStr) {
+int extractFileName(string inStr, char *retStr) {
     size_t found1;
     size_t found2;
-    found1 = inStr.find("<link rel=\"stylesheet\"  href=\"");
-    found1 += strlen("<link rel=\"stylesheet\"  href=\"");
-    found2 = inStr.find(".css\"", found1);
-    if (found2 == string::npos) {
-        cout << "No valid CSS file name found!" << endl;
-        return 1;
+    found1 = inStr.find("<link rel=\"stylesheet\" href=\"");
+    if (found1 != string::npos) {
+        found1 += strlen("<link rel=\"stylesheet\" href=\"");
+        found2 = inStr.find(".css\"", found1);
+        if (found2 == string::npos) {
+            cout << "No valid CSS file name found!" << endl;
+            return 1;
+        }
+        inStr.copy(retStr, found2 - found1 + 4, found1);
+    } else {
+        found1 = inStr.find("<script type=\"module\" src=\"");
+        if (found1 == string::npos) {
+            cout << "No valid script file name found!" << endl;
+            return 1;
+        } else {
+            found1 += strlen("<script type=\"module\" src=\"");
+            found2 = inStr.find(".js\"", found1);
+            if (found2 == string::npos) {
+                cout << "No valid script file name found!" << endl;
+                return 1;
+            }
+            inStr.copy(retStr, found2 - found1 + 3, found1);
+        }
     }
-    inStr.copy(retStr, found2 - found1 + 2, found1 + 2);
+
     return 0;
 }
 

@@ -52,6 +52,6 @@ Mkfile.old
 dkms.conf
 
 html.h
-html.htm
+index.html
 .vscode
 !bundle.modern.js
