@@ -54,3 +54,4 @@ dkms.conf
 html.h
 html.htm
 .vscode
+!bundle.modern.js
