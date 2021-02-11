@@ -11,8 +11,8 @@
 using namespace std;
 
 int main(int argc, char **argv) {
-    const string headderStr = "#ifndef __htmls1212123___\n#define __htmls1212123___\n#include <Arduino.h>\nconst char htmlData[] PROGMEM = R\"=====(\n";
-    const string footerStr = ")=====\";\n#endif\n";
+    const string headderStr = "#pragma once\n#include <Arduino.h>\nconst char htmlData[] PROGMEM = R\"=====(\n";
+    const string footerStr = ")=====\";\n";
 
     std::vector<std::string> allArgs(argv + 1, argv + argc);
     string finalString;
@@ -22,9 +22,9 @@ int main(int argc, char **argv) {
     char outputFileName[128] = {0};
     fstream pInputFile;
     fstream pCSSInput;
-    fstream pOutputFile;
+    ofstream pOutputFile;
 
-    bool neFlag = false, ndeFlag = false, inFlag = false, outFlag = false;
+    bool neFlag = false, ndeFlag = false, inFlag = false, outFlag = false, ahgFlag = false;
 
     auto inIterator = std::find(std::begin(allArgs), std::end(allArgs), "-i");
     auto outIterator = std::find(std::begin(allArgs), std::end(allArgs), "-o");
@@ -32,6 +32,8 @@ int main(int argc, char **argv) {
     if (stdIterator != std::end(allArgs)) neFlag = 1;
     stdIterator = std::find(std::begin(allArgs), std::end(allArgs), "-nde");
     if (stdIterator != std::end(allArgs)) ndeFlag = 1;
+    stdIterator = std::find(std::begin(allArgs), std::end(allArgs), "-ahg");
+    if (stdIterator != std::end(allArgs)) ahgFlag = true;
 
     if (!ndeFlag) {
         cout
@@ -64,7 +66,9 @@ int main(int argc, char **argv) {
         cout << "outputFileName: " << outputFileName << endl;
     }
 
-    finalString = headderStr;
+    if (ahgFlag) {
+        finalString = headderStr;
+    }
 
     pInputFile.open(inputFileName, ios::in);
     if (pInputFile.is_open()) {
@@ -84,7 +88,7 @@ int main(int argc, char **argv) {
                 }
                 pCSSInput.open(cssFileName, ios::in);
                 if (pCSSInput.is_open()) {
-                    finalString += "<style>\n";
+                    finalString += "<style>";
                     while (getline(pCSSInput, readString)) {
                         finalString += readString;
                     }
@@ -103,13 +107,25 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    finalString += footerStr;
+    if (ahgFlag) {
+        finalString += footerStr;
+    }
 
     if (!neFlag) {
         if (!ndeFlag) {
             cout << "final string:" << endl;
         }
         cout << finalString << endl;
+    }
+    if (outFlag) {
+        pOutputFile.open(outputFileName);
+        if (pOutputFile.is_open()) {
+            pOutputFile << finalString;
+            pOutputFile.close();
+        } else {
+            cout << "Error opening output file: " << outputFileName << endl;
+            return 1;
+        }
     }
 
     return 0;
